@@ -52,5 +52,8 @@ export function getGroup(group: string): PrettierSupportInfo['languages'] {
 }
 
 function getSupportLanguages(version?: string) {
-    return (require('prettier') as Prettier).getSupportInfo(version).languages;
+    return (require('prettier') as Prettier)
+        .getSupportInfo(version)
+        .languages
+        .filter(language => ['JavaScript', 'JSX'].includes(language.name));
 }

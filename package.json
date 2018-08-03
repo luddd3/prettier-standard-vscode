@@ -2,7 +2,7 @@
   "name": "prettier-standard-vscode",
   "displayName": "Prettier-standard - Javascript formatter",
   "description": "VS Code plugin for prettier + standard",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "publisher": "luddd3",
   "author": "Mathias Lundell <@luddd3>",
   "galleryBanner": {
