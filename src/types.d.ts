@@ -1,15 +1,6 @@
 export type ParserOption =
     | 'babylon'
     | 'flow'
-    | 'postcss' // deprecated, but may be found in getSupportInfo
-    | 'css'
-    | 'less'
-    | 'scss'
-    | 'typescript'
-    | 'json'
-    | 'json-stringify'
-    | 'graphql'
-    | 'markdown';
 
 type TrailingCommaOption = 'none' | 'es5' | 'all';
 
@@ -144,22 +135,4 @@ interface PrettierEslintOptions {
      * Run Prettier Last. Default false
      */
     prettierLast?: boolean;
-}
-
-/**
- * Format javascript code with prettier-eslint.
- *
- * @param {PrettierEslintOptions} options - Option bag for prettier-eslint.
- * @returns {string} the formatted code.
- */
-export type PrettierEslintFormat = (options: PrettierEslintOptions) => string;
-
-export interface PrettierStylelint {
-    format: (options: PrettierEslintOptions) => Promise<string>;
-    resolveConfig: (
-        file: string,
-        options?: {
-            useCache: boolean;
-        }
-    ) => Promise<[PrettierConfig, Object]>;
 }

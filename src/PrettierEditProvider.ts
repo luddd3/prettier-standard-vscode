@@ -15,17 +15,20 @@ import { requireLocalPkg } from './requirePkg';
 import {
     PrettierVSCodeConfig,
     Prettier,
-    PrettierEslintFormat,
     ParserOption,
-    PrettierStylelint,
     PrettierConfig,
 } from './types.d';
 
 const bundledPrettier = require('prettier') as Prettier;
-/**
- * HOLD style parsers (for stylelint integration)
- */
-const STYLE_PARSERS: ParserOption[] = ['postcss', 'css', 'less', 'scss'];
+const standard = require('standard')
+const standardLintText = function (text: any, options: any): any {
+    return new Promise((resolve, reject) => {
+        standard.lintText(text, options, (err: Error, results: Object) => {
+            return err ? reject(err) : resolve(results)
+        })
+    })
+}
+
 /**
  * Check if a given file has an associated prettierconfig.
  * @param filePath file's path
@@ -163,39 +166,9 @@ async function format(
         }
     );
 
-    if (vscodeConfig.eslintIntegration && doesParserSupportEslint) {
-        return safeExecution(
-            () => {
-                const prettierEslint = require('prettier-eslint') as PrettierEslintFormat;
-                setUsedModule('prettier-eslint', 'Unknown', true);
-
-                return prettierEslint({
-                    text,
-                    filePath: fileName,
-                    fallbackPrettierOptions: prettierOptions,
-                });
-            },
-            text,
-            fileName
-        );
-    }
-
-    if (vscodeConfig.stylelintIntegration && STYLE_PARSERS.includes(parser)) {
-        const prettierStylelint = require('prettier-stylelint') as PrettierStylelint;
-        return safeExecution(
-            prettierStylelint.format({
-                text,
-                filePath: fileName,
-                prettierOptions,
-            }),
-            text,
-            fileName
-        );
-    }
-
     if (!doesParserSupportEslint && useBundled) {
         return safeExecution(
-            () => {
+            new Promise((resolve, reject) => {
                 const warningMessage =
                     `prettier@${
                         localPrettier.version
@@ -208,8 +181,15 @@ async function format(
 
                 setUsedModule('prettier', bundledPrettier.version, true);
 
-                return bundledPrettier.format(text, prettierOptions);
-            },
+                try {
+                    const pretty = bundledPrettier.format(text, prettierOptions);
+                    resolve(pretty)
+                } catch (err) {
+                    reject(err)
+                }
+            }).then(pretty => {
+                return standardLintText(pretty, { fix: true, parser: 'babel-eslint' })
+            }).then(obj => obj.results[0].output),
             text,
             fileName
         );
@@ -218,7 +198,16 @@ async function format(
     setUsedModule('prettier', localPrettier.version, false);
 
     return safeExecution(
-        () => localPrettier.format(text, prettierOptions),
+        new Promise((resolve, reject) => {
+            try {
+                const pretty = localPrettier.format(text, prettierOptions)
+                resolve(pretty)
+            } catch (err) {
+                reject(err)
+            }
+        }).then(pretty => {
+            return standardLintText(pretty, { fix: true, parser: 'babel-eslint' })
+        }).then(obj => obj.results[0].output),
         text,
         fileName
     );
